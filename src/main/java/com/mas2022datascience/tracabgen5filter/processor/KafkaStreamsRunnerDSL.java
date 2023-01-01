@@ -1,6 +1,7 @@
 package com.mas2022datascience.tracabgen5filter.processor;
 
 import com.mas2022datascience.avro.v1.Frame;
+import com.mas2022datascience.avro.v1.TracabGen5TF01;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -22,24 +23,15 @@ public class KafkaStreamsRunnerDSL {
   @Value(value = "${topic.tracab-02.name}")
   private String topicOut;
 
-  @Value(value = "${filter.inPhase}")
-  private Boolean inPhase;
-
-  @Value(value = "${filter.isBallInPlay}")
-  private String isBallInPlay;
-
-
   @Bean
-  public KStream<String, Frame> kStream(StreamsBuilder kStreamBuilder) {
+  public KStream<String, TracabGen5TF01> kStream(StreamsBuilder kStreamBuilder) {
 
-    final Serde<Frame> frameSerde = new SpecificAvroSerde<>();
+    final Serde<TracabGen5TF01> frameTracabGen5 = new SpecificAvroSerde<>();
 
     // the builder is used to construct the topology
-    KStream<String, Frame> stream = kStreamBuilder.stream(topicIn);
+    KStream<String, TracabGen5TF01> stream = kStreamBuilder.stream(topicIn);
 
     stream
-        .filter((matchId, actualFrame) -> checkInPhases(actualFrame) || !inPhase)
-        .filter((matchId, actualFrame) -> checkIsBallInPlay(actualFrame, isBallInPlay))
         .to(topicOut);
 
     return stream;
@@ -56,26 +48,6 @@ public class KafkaStreamsRunnerDSL {
         .withZone(ZoneOffset.UTC);
 
     return Instant.from(fmt.parse(utcString)).toEpochMilli();
-  }
-
-  /**
-   * checks if the utcString timestamp of the actualFrame is within the phases.
-   * If yes then it returns true. Otherwise, it returns false.
-   * @param actualFrame of type Frame
-   * @return of type boolean
-   */
-  private boolean checkInPhases(Frame actualFrame) {
-    long firstHalfStart = utcString2epocMs(actualFrame.getPhases().get(0).getStart());
-    long firstHalfEnd = utcString2epocMs(actualFrame.getPhases().get(0).getEnd());
-    long secondHalfStart = utcString2epocMs(actualFrame.getPhases().get(1).getStart());
-    long secondHalfEnd = utcString2epocMs(actualFrame.getPhases().get(1).getEnd());
-
-    long actualTimestamp = utcString2epocMs(actualFrame.getUtc());
-
-    if (actualTimestamp > firstHalfStart && actualTimestamp < firstHalfEnd) {
-      return true;
-    }
-    return actualTimestamp > secondHalfStart && actualTimestamp < secondHalfEnd;
   }
 
   /**

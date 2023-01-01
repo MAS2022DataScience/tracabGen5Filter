@@ -8,15 +8,10 @@ topic:
     replication-factor: 2
     partitions: 3
 
-filter:
-  # true -> only take frames that are within the phase time (1st phase and 2nd phase)
-  # false -> all frames are taken
-  inPhase: true
-  # "all" -> all frames with isBallInPlay setting 0 and 1
-  # "0" -> only frames with isBallInPlay setting 0. 0 means game is not running.
-  # "1" -> only frames with isBallInPlay setting 1. 1 means game is running.
-  # anything else is treated as all
-  isBallInPlay: all
+#filter:
+#  # true -> only take frames that are within the phase time (1st phase and 2nd phase)
+#  # false -> all frames are taken
+#  inPhase: true
 
 spring:
   application:
