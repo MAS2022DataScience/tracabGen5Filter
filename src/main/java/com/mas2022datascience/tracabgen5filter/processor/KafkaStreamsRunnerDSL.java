@@ -6,8 +6,12 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.Map;
 import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,13 +27,20 @@ public class KafkaStreamsRunnerDSL {
   @Value(value = "${topic.tracab-02.name}")
   private String topicOut;
 
+  @Value(value = "${spring.kafka.properties.schema.registry.url}") private String schemaRegistry;
+
   @Bean
   public KStream<String, TracabGen5TF01> kStream(StreamsBuilder kStreamBuilder) {
 
-    final Serde<TracabGen5TF01> frameTracabGen5 = new SpecificAvroSerde<>();
+    // When you want to override serdes explicitly/selectively
+    final Map<String, String> serdeConfig = Collections.singletonMap("schema.registry.url",
+        schemaRegistry);
+    final Serde<TracabGen5TF01> tracabGen5TF01Serde = new SpecificAvroSerde<>();
+    tracabGen5TF01Serde.configure(serdeConfig, false); // `false` for record values
 
     // the builder is used to construct the topology
-    KStream<String, TracabGen5TF01> stream = kStreamBuilder.stream(topicIn);
+    KStream<String, TracabGen5TF01> stream = kStreamBuilder.stream(topicIn,
+    Consumed.with(Serdes.String(), tracabGen5TF01Serde));
 
     stream
         .to(topicOut);
